@@ -7,6 +7,7 @@ import tensorflow as tf
 
 from tensorflow.keras import layers
 from tensorflow.keras.utils import image_dataset_from_directory
+from tqdm import tqdm
 
 
 class LicencePlateColorGenerator(layers.Layer):
@@ -27,19 +28,22 @@ class LicencePlateColorGenerator(layers.Layer):
 def save_image_and_label(lic_image, bbcoords, image_index):
     # Saving the image with a new name
     if image_index <= train_split:
-        lic_image.save("/home/santiagorg2401/SANPR-TF/LicensePlates/train/images/ccpd_" + str(image_index) + ".jpg")
+        lic_image.save(
+            "/home/santiagorg2401/SANPR-TF/LicensePlates/train/images/ccpd_" + str(image_index) + ".jpg")
         # Saving txt files for labels
         with open("/home/santiagorg2401/SANPR-TF/LicensePlates/train/labels/ccpd_" + str(image_index) + ".txt", 'w') as f:
             f.write("0 " + str(bbcoords[0][0][0]) + " " + str(bbcoords[0][0][1]) + " " + str(
                 bbcoords[1]) + " " + str(bbcoords[2]))
     if image_index > train_split and image_index <= valid_split:
-        lic_image.save("/home/santiagorg2401/SANPR-TF/LicensePlates/valid/images/ccpd_" + str(image_index) + ".jpg")
+        lic_image.save(
+            "/home/santiagorg2401/SANPR-TF/LicensePlates/valid/images/ccpd_" + str(image_index) + ".jpg")
         # Saving txt files for labels
         with open("/home/santiagorg2401/SANPR-TF/LicensePlates/valid/labels/ccpd_" + str(image_index) + ".txt", 'w') as f:
             f.write("0 " + str(bbcoords[0][0][0]) + " " + str(bbcoords[0][0][1]) + " " + str(
                 bbcoords[1]) + " " + str(bbcoords[2]))
     if image_index > valid_split:
-        lic_image.save("/home/santiagorg2401/SANPR-TF/LicensePlates/test/images/ccpd_" + str(image_index) + ".jpg")
+        lic_image.save(
+            "/home/santiagorg2401/SANPR-TF/LicensePlates/test/images/ccpd_" + str(image_index) + ".jpg")
         # Saving txt files for labels
         with open("/home/santiagorg2401/SANPR-TF/LicensePlates/test/labels/ccpd_" + str(image_index) + ".txt", 'w') as f:
             f.write("0 " + str(bbcoords[0][0][0]) + " " + str(bbcoords[0][0][1]) + " " + str(
@@ -57,15 +61,15 @@ def get_coordinates(coords):
 
 def get_center_widthheight(top_left, bot_right):
     x_center, y_center = (-top_left[0] + bot_right[0]) / 2 + top_left[0], \
-                        (-top_left[1] + bot_right[1]) / 2 + top_left[1]
+        (-top_left[1] + bot_right[1]) / 2 + top_left[1]
     width, height = bot_right - top_left
-    print(width, height)
+
     return (x_center, y_center), int(width), int(height)
 
 
 def normalize_bbox(center, width, height, image_shape):
     norm_center = center / image_shape
-    norm_width = width/ image_shape[0][0]
+    norm_width = width / image_shape[0][0]
     norm_height = height / image_shape[0][1]
 
     return norm_center, norm_width, norm_height
@@ -81,7 +85,7 @@ def run_all(path):
 
     image_index = 0
     n_files = 3 * len(dir_list)
-    
+
     global train_split, valid_split, tests_split
 
     train_split = int(n_files*0.7)
@@ -90,8 +94,7 @@ def run_all(path):
 
     layer = LicencePlateColorGenerator()
 
-    for path_el in dir_list:
-
+    for path_el in tqdm(dir_list):
         splitted_path = path_el.split("-")
         whole_coord_code = splitted_path[2]
         top_left, bot_right = get_coordinates(whole_coord_code)
@@ -105,8 +108,8 @@ def run_all(path):
         aug = layer(np.asarray(lic_image), training=True)
 
         for image_n in range(3):
-            save_image_and_label(Image.fromarray(
-                aug[image_n]), (norm_center, norm_width, norm_height), image_index)
+            save_image_and_label(Image.fromarray(np.array(
+                aug[image_n])), (norm_center, norm_width, norm_height), image_index)
             image_index += 1
 
 
@@ -116,7 +119,7 @@ def run_once(path):
 
     layer = LicencePlateColorGenerator()
     global train_split, valid_split, tests_split
-    
+
     train_split = 5
     valid_split = 10
     tests_split = 15
@@ -141,8 +144,8 @@ def run_once(path):
 
 
 if __name__ == "__main__":
-    path = "/home/santiagorg2401/CCPD2019/ccpd_base/0130076628352-90_90-273&504_482&579-492&582_268&582_270&504_494&504-0_0_1_11_24_32_26-165-29.jpg"
-    run_once(path)
-
-    # path = "/home/santiagorg2401/CCPD2019/ccpd_base/ccpd_"
+    # path = "/home/santiagorg2401/CCPD2019/ccpd_base/0130076628352-90_90-273&504_482&579-492&582_268&582_270&504_494&504-0_0_1_11_24_32_26-165-29.jpg"
     # run_once(path)
+
+    path = "/home/santiagorg2401/CCPD2019/ccpd_base/"
+    run_all(path)
